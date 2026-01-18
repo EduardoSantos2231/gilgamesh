@@ -1,0 +1,33 @@
+{
+  "name": "gilgamesh",
+  "version": "1.0.0",
+  "description": "script facilitador de busca por estágios",
+  "keywords": [
+    "search",
+    "scrapping",
+    "data"
+  ],
+  "license": "ISC",
+  "author": "Eduardo SN",
+  "type": "module",
+  "main": "./dist/main.js",
+  "imports": {
+    "#/*": "./dist/*.js"
+  },
+  "scripts": {
+    "dev": "tsx ./src/main.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/chalk": "^0.4.31",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^25.0.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.2.0",
+    "chalk": "^5.6.2"
+  }
+}

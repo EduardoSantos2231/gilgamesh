@@ -7,7 +7,7 @@ interface Questions {
   askForConfirmation(): Promise<boolean>
 }
 
-export class ScriptActions implements Questions {
+export const scriptActions: Questions = {
   async askForPlatform(): Promise<Platform[]> {
     return await checkbox({
       message: "Escolha uma plataforma ou mais plataformas",
@@ -31,7 +31,7 @@ export class ScriptActions implements Questions {
       required: true
     })
 
-  }
+  },
 
   async askForModalitie(): Promise<Modalitie[]> {
     return await checkbox({
@@ -49,13 +49,13 @@ export class ScriptActions implements Questions {
       required: true
     })
 
-  }
+  },
   async askForConfirmation(): Promise<boolean> {
     return await confirm({
       message: "Confirmar escolhas? ",
       default: true,
     })
 
-  }
+  },
 }
 

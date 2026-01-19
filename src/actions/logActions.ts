@@ -1,4 +1,4 @@
-import type { Modalitie, Platform } from "@/types/plataforms.types.js";
+import type { Modalitie, Platform } from "@/types/imports.js";
 import chalk from "chalk";
 
 

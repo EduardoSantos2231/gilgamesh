@@ -1,4 +1,4 @@
 import { logger, displayOptions, displayWelcome } from "./logActions.js";
-import { ScriptActions } from "./scriptActions.js";
+import { scriptActions } from "./scriptActions.js";
 
-export { logger, ScriptActions, displayWelcome, displayOptions }
+export { logger, scriptActions, displayWelcome, displayOptions }

@@ -1,2 +1,2 @@
-export type Modalities = "internship" | "clt"
-export type Platforms = "ciee" | "solides" | "iel" | "catho"
+
+export type Platform = "ciee" | "solides" | "iel" | "catho"

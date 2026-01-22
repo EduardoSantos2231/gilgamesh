@@ -1,5 +1,5 @@
-import { logger } from '@/actions/imports.js';
-import { type InquirerError, ValidationError, ScraperError } from '@/types/error.types.js';
+import { logger } from '@/utils/logger.js';
+import { type InquirerError, ValidationError, ScraperError, InitError } from '@/types/imports.js';
 
 interface Handlers {
   handleError(error: unknown): void
@@ -24,7 +24,17 @@ export class ErrorHandler implements Handlers {
     return error instanceof ScraperError;
   }
 
+  private isInitError(error: unknown): error is InitError {
+    return error instanceof InitError;
+  }
+
   handleError(error: unknown): void {
+    if (this.isInitError(error)) {
+      console.log("\n")
+      logger.error("Algo deu errado ao iniciar a instância do browser...")
+      process.exit(1)
+    }
+
     if (this.isExitError(error)) {
       console.log('\n');
       logger.warn('Operação interrompida pelo usuário.');

@@ -18,7 +18,6 @@ async function init() {
     displayOptions(platforms, modalities)
     const configs: SearchConfig =
     {
-      area: "",
       modalities: modalities,
       platforms: platforms,
       location: location,

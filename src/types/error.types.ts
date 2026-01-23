@@ -20,6 +20,6 @@ export class ValidationError extends Error {
 export class InitError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'Init Error'
+    this.name = 'InitError'
   }
 }

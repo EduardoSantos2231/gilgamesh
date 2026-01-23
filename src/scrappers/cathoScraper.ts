@@ -18,7 +18,6 @@ export class CathoScraper extends BaseScrapper {
     const regionKey = this.config.location as RegionKey;
     const data = SUPPORTED_REGIONS[regionKey];
 
-    if (!data) throw new Error(`Região ${regionKey} não suportada.`);
 
     return `/${data.state}/${data.city}/`;
   }

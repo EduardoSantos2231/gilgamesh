@@ -17,15 +17,21 @@ export class ErrorHandler implements Handlers {
   }
 
   private isValidationError(error: unknown): error is ValidationError {
-    return error instanceof ValidationError;
+
+    return error instanceof Error &&
+      (error.name === 'ValidationError')
   }
 
   private isScraperError(error: unknown): error is ScraperError {
-    return error instanceof ScraperError;
+
+    return error instanceof Error &&
+      (error.name === 'ScraperError')
+
   }
 
   private isInitError(error: unknown): error is InitError {
-    return error instanceof InitError;
+    return error instanceof Error &&
+      (error.name === 'InitError')
   }
 
   handleError(error: unknown): void {
@@ -42,13 +48,13 @@ export class ErrorHandler implements Handlers {
     }
 
     if (this.isScraperError(error)) {
-      logger.error(`[Scraper] Falha ao coletar dados: ${error.message}`);
+      logger.error(`[Scraper] Falha ao coletar dados: \n${error.message}`);
       // Aqui você poderia decidir não fechar o processo, apenas avisar
       return;
     }
 
     if (this.isValidationError(error)) {
-      logger.error(`[Dados] Erro na padronização das vagas: ${error.message}`);
+      logger.error(`[Dados] Erro na padronização das vagas: \n${error.message}`);
       return;
     }
 

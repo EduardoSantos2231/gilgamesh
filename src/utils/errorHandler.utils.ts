@@ -1,4 +1,4 @@
-import { logger } from '@/utils/logger.js';
+import { logger } from '@/utils/logger.utils.js';
 import { type InquirerError, ValidationError, ScraperError, InitError } from '@/types/imports.js';
 
 interface Handlers {

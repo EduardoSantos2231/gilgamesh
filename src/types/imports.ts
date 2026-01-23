@@ -4,9 +4,11 @@ import type { InquirerError } from "./error.types.js";
 import type { Job } from "./job.types.js";
 import { ScraperError, ValidationError, InitError } from "./error.types.js";
 import type { SearchConfig } from "./searchConfigs.types.js";
+import { SUPPORTED_REGIONS, type RegionKey } from "./regions.types.js";
 
 export {
   type Platform, type SearchConfig,
+  type RegionKey, SUPPORTED_REGIONS,
   type Modalitie, type InquirerError,
   type Job,
   ScraperError, ValidationError,

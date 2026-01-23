@@ -1,6 +1,14 @@
-import { BrowserManager } from '@/utils/imports.js';
+import { BrowserManager, CsvExporter } from '@/utils/imports.js';
 import { CathoScraper } from '@/scrappers/cathoScraper.js';
-import type { SearchConfig, } from '@/types/imports.js';
+import type { Job, SearchConfig, } from '@/types/imports.js';
+
+
+function getCurrentDate(): string {
+  const date = new Date(Date.now());
+  return date.toLocaleDateString("pt-BR").replaceAll("/", "-");
+
+}
+
 
 export async function scraperHandler(
   config: SearchConfig,
@@ -16,7 +24,9 @@ export async function scraperHandler(
       switch (platform.toLowerCase()) {
         case 'catho':
           const cathoScraper = new CathoScraper(config, page)
-          await cathoScraper.initScrapper()
+          const jobs: Job[] = await cathoScraper.initScrapper()
+          CsvExporter.export(jobs, `vagas_catho_${getCurrentDate()}.csv`)
+
           break;
 
         case 'ciee':
@@ -29,7 +39,6 @@ export async function scraperHandler(
       }
     } catch (error) {
       console.error(`[Handler] Erro ao processar ${platform}:`, error);
-      // Garantimos o fechamento da página mesmo em erro se o Scraper falhar
       if (!page.isClosed()) await page.close();
     }
   }

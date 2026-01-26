@@ -43,10 +43,7 @@ export const scriptActions: Questions = {
           name: "Estágio",
           value: "estagio"
         },
-        {
-          name: "Efetivo",
-          value: "efetivo"
-        }
+
       ],
       required: true
     })

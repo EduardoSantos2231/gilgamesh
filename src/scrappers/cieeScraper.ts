@@ -22,7 +22,7 @@ export class CieeScraper extends BaseScraper implements IScraper {
 
     const query = new URLSearchParams({
       page: pageNumber.toString(),
-      size: "20",
+      size: "30",
       sort: "codigoVaga,desc",
       codigoMunicipio: cieeCode || "",
       tipoVaga: "ESTAGIO",

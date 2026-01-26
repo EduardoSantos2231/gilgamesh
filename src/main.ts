@@ -1,7 +1,6 @@
 import { scriptActions, displayOptions, displayWelcome } from "@/actions/imports.js";
-import { ErrorHandler } from "@/utils/errorHandler.utils.js";
-import { BrowserManager, scraperHandler } from "@/utils/imports.js";
-import type { SearchConfig } from "./types/searchConfigs.types.js";
+import { BrowserManager, scraperHandler, ErrorHandler } from "@/utils/imports.js";
+import type { SearchConfig } from "./types/imports.ts";
 
 
 async function init() {

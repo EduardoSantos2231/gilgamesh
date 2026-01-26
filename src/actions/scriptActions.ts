@@ -1,5 +1,6 @@
 import { checkbox, confirm, select } from "@inquirer/prompts";
-import { type Platform, type Modalitie, type RegionKey, SUPPORTED_REGIONS } from "@/types/imports.js";
+import { type Platform, type Modalitie, type RegionKey, } from "@/types/imports.js";
+import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
 
 interface Questions {
   askForPlatform(): Promise<Platform[]>

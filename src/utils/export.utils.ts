@@ -11,7 +11,7 @@ export class CsvExporter {
       return;
     }
 
-    const headers = ['title', 'company', 'location', 'modality', 'link', 'postedAt'];
+    const headers = ['title', 'company', 'location', 'modality', 'link', 'postedAt', "salary"];
 
     const rows = jobs.map(job => {
       return headers.map(header => {

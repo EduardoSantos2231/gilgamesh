@@ -1,10 +1,13 @@
 import type { Platform, SearchConfig, Job, RegionKey } from "@/types/imports.js";
-import { ScraperError, SUPPORTED_REGIONS } from "@/types/imports.js";
-import { BaseScrapper } from "./baseScraper.js";
+import { ScraperError, } from "@/types/imports.js";
+import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
+import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { logger } from "@/utils/imports.js";
+import { MAX_PAGES } from "@/constants/maxPages.js";
+import type { IScraper } from "@/types/imports.js";
 
-export class CathoScraper extends BaseScrapper {
+export class CathoScraper extends BaseScraper implements IScraper {
   private readonly scraperName: Platform = "catho";
   private readonly CATHO_BASE_URL = "https://www.catho.com.br/vagas";
   private readonly TI_AREA_IDENTIFIERS = ["51", "52"];
@@ -65,10 +68,9 @@ export class CathoScraper extends BaseScrapper {
   }
 
 
-  async initScrapper(): Promise<Job[]> {
+  async initScraper(): Promise<Job[]> {
     this.showInitMessage(this.scraperName);
 
-    const MAX_PAGES = 2;
     const allJobs: Job[] = [];
 
     try {

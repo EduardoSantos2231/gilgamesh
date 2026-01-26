@@ -1,6 +1,7 @@
 import { BrowserManager, CsvExporter } from '@/utils/imports.js';
 import { CathoScraper } from '@/scrappers/cathoScraper.js';
 import type { Job, SearchConfig, } from '@/types/imports.js';
+import { CieeScraper } from '@/scrappers/cieeScraper.js';
 
 
 function getCurrentDate(): string {
@@ -24,13 +25,16 @@ export async function scraperHandler(
       switch (platform.toLowerCase()) {
         case 'catho':
           const cathoScraper = new CathoScraper(config, page)
-          const jobs: Job[] = await cathoScraper.initScrapper()
+          const jobs: Job[] = await cathoScraper.initScraper()
           CsvExporter.export(jobs, `vagas_catho_${getCurrentDate()}.csv`)
 
           break;
 
         case 'ciee':
           // await CieeScrapper.initScraping(page, config);
+          const cieeScraper = new CieeScraper(config, page)
+          const cieeJobs: Job[] = await cieeScraper.initScraper()
+          CsvExporter.export(cieeJobs, `vagas_ciee_${getCurrentDate()}.csv`)
           break;
 
         default:

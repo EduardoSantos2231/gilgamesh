@@ -5,4 +5,5 @@ export interface Job {
   modality: string;
   link: string;
   postedAt?: string;
+  salary?: string;
 }

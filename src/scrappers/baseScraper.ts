@@ -2,12 +2,11 @@ import type { Platform, SearchConfig } from "@/types/imports.js";
 import { logger } from "@/utils/imports.js";
 import type { Page } from "puppeteer";
 
-export abstract class BaseScrapper {
+export abstract class BaseScraper {
   constructor(protected config: SearchConfig, protected page: Page) { }
 
   protected showInitMessage(scraperName: Platform) {
     logger.success(`Iniciando ${scraperName} com os parâmetros: \n`)
-    logger.success(`Area: ${this.config.area}`)
     logger.success(`Modalidade: ${this.config.modalities}`)
   }
 

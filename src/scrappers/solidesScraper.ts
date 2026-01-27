@@ -1,4 +1,4 @@
-import { type Job, type SearchConfig, type IScraper, type Platform, type RegionKey, ScraperError } from "@/types/imports.js";
+import { type Job, type SearchConfig, type IScraper, type Platform, type RegionKey } from "@/types/imports.js";
 import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
@@ -38,7 +38,7 @@ export class SolidesScraper extends BaseScraper implements IScraper {
     }
     return await this.page.evaluate(async (endpoint) => {
       const response = await fetch(endpoint)
-      if (!response.ok) throw new ScraperError(`HTTP ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.json();
     }, url);
   }

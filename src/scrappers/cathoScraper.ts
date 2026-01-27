@@ -1,11 +1,9 @@
-import type { Platform, SearchConfig, Job, RegionKey } from "@/types/imports.js";
+import type { Platform, SearchConfig, Job, RegionKey, IScraper } from "@/types/imports.js";
 import { ScraperError, } from "@/types/imports.js";
 import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
 import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { logger } from "@/utils/imports.js";
-import { MAX_PAGES } from "@/constants/maxPages.js";
-import type { IScraper } from "@/types/imports.js";
 
 export class CathoScraper extends BaseScraper implements IScraper {
   protected readonly scraperName: Platform = "catho";
@@ -74,7 +72,7 @@ export class CathoScraper extends BaseScraper implements IScraper {
     const allJobs: Job[] = [];
 
     try {
-      for (let currentPage = 1; currentPage <= MAX_PAGES; currentPage++) {
+      for (let currentPage = 1; currentPage <= this.MAX_PAGES; currentPage++) {
         const targetUrl = this.generateTargetUrl(currentPage);
         logger.info(`[CATHO] Varrendo página ${currentPage}: ${targetUrl}`);
 
@@ -89,7 +87,7 @@ export class CathoScraper extends BaseScraper implements IScraper {
           logger.success(`[CATHO] Página ${currentPage}: ${jobsFromPage.length} vagas encontradas.`);
 
           // Delay humano entre as páginas
-          if (currentPage < MAX_PAGES) {
+          if (currentPage < this.MAX_PAGES) {
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
         } catch (err) {

@@ -4,6 +4,7 @@ import type { Page } from "puppeteer";
 
 export abstract class BaseScraper {
   constructor(protected config: SearchConfig, protected page: Page) { }
+  protected MAX_PAGES = 2;
   protected abstract readonly scraperName: Platform;
   protected abstract readonly BASE_URL: string;
 

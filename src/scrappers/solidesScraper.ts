@@ -3,7 +3,6 @@ import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
 import { logger } from "@/utils/imports.js";
-import { MAX_PAGES } from "@/constants/maxPages.js";
 
 export class SolidesScraper extends BaseScraper implements IScraper {
   protected readonly scraperName: Platform = "solides";
@@ -76,7 +75,7 @@ export class SolidesScraper extends BaseScraper implements IScraper {
     let hasNextPage = true;
 
     try {
-      while (hasNextPage && currentPage <= MAX_PAGES) {
+      while (hasNextPage && currentPage <= this.MAX_PAGES) {
         const url = this.buildTargetUrl(currentPage);
         logger.info(`[Solides] Coletando página ${currentPage}...`);
 
@@ -94,7 +93,7 @@ export class SolidesScraper extends BaseScraper implements IScraper {
         hasNextPage = currentPage < totalPages;
         currentPage++;
 
-        if (hasNextPage && currentPage <= MAX_PAGES) {
+        if (hasNextPage && currentPage <= this.MAX_PAGES) {
           await new Promise(r => setTimeout(r, 1500));
         }
       }

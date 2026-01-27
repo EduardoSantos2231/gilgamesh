@@ -3,7 +3,6 @@ import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
 import { logger } from "@/utils/imports.js";
-import { MAX_PAGES } from "@/constants/maxPages.js";
 
 
 export class CieeScraper extends BaseScraper implements IScraper {
@@ -65,7 +64,7 @@ export class CieeScraper extends BaseScraper implements IScraper {
     let isLastPage = false;
 
     try {
-      while (!isLastPage && currentPage < MAX_PAGES) {
+      while (!isLastPage && currentPage < this.MAX_PAGES) {
         const url = this.buildTargetUrl(currentPage);
         logger.info(`[CIEE] Coletando página ${currentPage}...`);
 

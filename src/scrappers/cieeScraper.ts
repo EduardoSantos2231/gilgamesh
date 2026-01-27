@@ -7,8 +7,8 @@ import { MAX_PAGES } from "@/constants/maxPages.js";
 
 
 export class CieeScraper extends BaseScraper implements IScraper {
-  private readonly scraperName: Platform = "ciee";
-  private readonly API_BASE_URL = "https://api.ciee.org.br/vagas/vitrine-vaga/publicadas";
+  protected readonly scraperName: Platform = "ciee";
+  protected readonly BASE_URL = "https://api.ciee.org.br/vagas/vitrine-vaga/publicadas";
 
 
   constructor(config: SearchConfig, page: Page) {
@@ -28,7 +28,7 @@ export class CieeScraper extends BaseScraper implements IScraper {
       tipoVaga: "ESTAGIO",
     });
 
-    return `${this.API_BASE_URL}?${query.toString()}`;
+    return `${this.BASE_URL}?${query.toString()}`;
   }
 
 

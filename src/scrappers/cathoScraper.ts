@@ -8,8 +8,8 @@ import { MAX_PAGES } from "@/constants/maxPages.js";
 import type { IScraper } from "@/types/imports.js";
 
 export class CathoScraper extends BaseScraper implements IScraper {
-  private readonly scraperName: Platform = "catho";
-  private readonly CATHO_BASE_URL = "https://www.catho.com.br/vagas";
+  protected readonly scraperName: Platform = "catho";
+  protected readonly BASE_URL = "https://www.catho.com.br/vagas";
   private readonly TI_AREA_IDENTIFIERS = ["51", "52"];
 
   constructor(config: SearchConfig, page: Page) {
@@ -42,7 +42,7 @@ export class CathoScraper extends BaseScraper implements IScraper {
   private generateTargetUrl(pageNumber: number): string {
     const regionalPath = this.buildRegionalPath();
     const filterQueryString = this.buildSearchFilters(pageNumber);
-    return `${this.CATHO_BASE_URL}${regionalPath}${filterQueryString}`;
+    return `${this.BASE_URL}${regionalPath}${filterQueryString}`;
   }
 
 

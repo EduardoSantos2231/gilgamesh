@@ -6,8 +6,8 @@ import { logger } from "@/utils/imports.js";
 import { MAX_PAGES } from "@/constants/maxPages.js";
 
 export class SolidesScraper extends BaseScraper implements IScraper {
-  private readonly scraperName: Platform = "solides";
-  private readonly API_BASE_URL = "https://apigw.solides.com.br/jobs/v3/portal-vacancies-new";
+  protected readonly scraperName: Platform = "solides";
+  protected readonly BASE_URL = "https://apigw.solides.com.br/jobs/v3/portal-vacancies-new";
 
 
   constructor(config: SearchConfig, page: Page) {
@@ -28,7 +28,7 @@ export class SolidesScraper extends BaseScraper implements IScraper {
       take: "30",
     });
 
-    return `${this.API_BASE_URL}?${query.toString()}`;
+    return `${this.BASE_URL}?${query.toString()}`;
   }
 
 

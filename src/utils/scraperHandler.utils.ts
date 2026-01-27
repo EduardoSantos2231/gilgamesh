@@ -2,6 +2,7 @@ import { BrowserManager, CsvExporter } from '@/utils/imports.js';
 import { CathoScraper } from '@/scrappers/cathoScraper.js';
 import type { Job, SearchConfig, } from '@/types/imports.js';
 import { CieeScraper } from '@/scrappers/cieeScraper.js';
+import { SolidesScraper } from '@/scrappers/solidesScraper.js';
 
 
 function getCurrentDate(): string {
@@ -27,19 +28,23 @@ export async function scraperHandler(
           const cathoScraper = new CathoScraper(config, page)
           const jobs: Job[] = await cathoScraper.initScraper()
           CsvExporter.export(jobs, `vagas_catho_${getCurrentDate()}.csv`)
-
           break;
 
         case 'ciee':
-          // await CieeScrapper.initScraping(page, config);
           const cieeScraper = new CieeScraper(config, page)
           const cieeJobs: Job[] = await cieeScraper.initScraper()
           CsvExporter.export(cieeJobs, `vagas_ciee_${getCurrentDate()}.csv`)
           break;
 
+        case 'solides':
+          const solidesScraper = new SolidesScraper(config, page)
+          const solidesJobs: Job[] = await solidesScraper.initScraper()
+          CsvExporter.export(solidesJobs, `vagas_solides_${getCurrentDate()}.csv`)
+          break;
+
         default:
           console.warn(`[Handler] Plataforma ${platform} ainda não suportada.`);
-          await page.close(); // Não esquecer de fechar a página se não usar
+          await page.close();
       }
     } catch (error) {
       console.error(`[Handler] Erro ao processar ${platform}:`, error);

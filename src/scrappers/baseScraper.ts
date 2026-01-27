@@ -6,7 +6,7 @@ export abstract class BaseScraper {
   constructor(protected config: SearchConfig, protected page: Page) { }
 
   protected showInitMessage(scraperName: Platform) {
-    logger.success(`Iniciando ${scraperName} com os parâmetros: \n`)
+    logger.success(`Iniciando ${scraperName}`)
     logger.success(`Modalidade: ${this.config.modalities}`)
   }
 

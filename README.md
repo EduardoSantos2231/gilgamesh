@@ -25,8 +25,11 @@ os Termos de Serviço e políticas das plataformas envolvidas.
 
 #### ✅ Coletas funcionais
 
+ ⚠️ Em algumas plataformas os filtros de busca por estágio não funcionam ainda (catho, ciee), neles são retornados todos 
+as vagas encontradas;
 > ___Catho___
-
+> ___Ciee___
+> ___Solides___
 ---
 
 ## 🛠️ Tecnologias

@@ -1,4 +1,4 @@
-import type { Job, SearchConfig, IScraper, Platform, RegionKey } from "@/types/imports.js";
+import { type Job, type SearchConfig, type IScraper, type Platform, type RegionKey, ScraperError } from "@/types/imports.js";
 import { BaseScraper } from "./baseScraper.js";
 import type { Page } from "puppeteer";
 import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
@@ -35,19 +35,24 @@ export class CieeScraper extends BaseScraper implements IScraper {
   private async fetchApiData(url: string): Promise<any> {
     return await this.page.evaluate(async (endpoint) => {
       const response = await fetch(endpoint);
-      if (!response.ok) throw new Error(`Falha HTTP: ${response.status}`);
+      if (!response.ok) throw new ScraperError(`Falha HTTP: ${response.status}`);
       return await response.json();
     }, url);
   }
 
-
   private mapToJobs(apiContent: any[]): Job[] {
     return apiContent.map((vaga) => ({
-      title: vaga.areaProfissional || vaga.tipoVaga || "Estágio",
-      company: vaga.nomeEmpresa || "Confidencial",
+
+      title: vaga.areaProfissional || vaga.tipoVaga,
+
+      company: vaga.nomeEmpresa,
+
       location: `${vaga.local.cidade} - ${vaga.local.uf}`,
+
       modality: vaga.tipoVaga,
+
       link: `https://portal.ciee.org.br/vaga/${vaga.codigoVaga}`,
+
       salary: vaga.bolsaAuxilio ? `R$ ${vaga.bolsaAuxilio}` : "N/A",
     }));
   }

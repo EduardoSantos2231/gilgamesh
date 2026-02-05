@@ -1,5 +1,6 @@
 import type { Platform } from "../interfaces/platform.type.js";
 import type { Job } from "../types/job.types.js";
+import type { Page } from "puppeteer";
 import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
 import { BaseScraper } from "./baseScraper.js";
 import { CathoJobAdapter } from "../adapters/catho-job.adapter.js";
@@ -35,7 +36,7 @@ export class CathoScraper extends BaseScraper {
     return `${"https://www.catho.com.br/vagas"}${regionalPath}${filterQueryString}`;
   }
 
-  private async extractJobsFromPage(page: import("puppeteer").Page): Promise<Job[]> {
+  private async extractJobsFromPage(page: Page): Promise<Job[]> {
     const elements = await page.$$eval("article", (els) =>
       els.map((el) => {
         const titleEl = el.querySelector("h2 a");
@@ -61,14 +62,13 @@ export class CathoScraper extends BaseScraper {
       for (let currentPage = 1; currentPage <= this.MAX_PAGES; currentPage++) {
         const targetUrl = this.generateTargetUrl(currentPage);
         logger.info(`[CATHO] Varrendo página ${currentPage}...`);
-
         await this.acessUrl(targetUrl);
 
         let jobsFromPage: Job[] = [];
 
         try {
           await this.withPage(async (page) => {
-            await page.waitForSelector("article", { timeout: 5000 });
+            await page.waitForSelector("article", { timeout: 9000 });
             jobsFromPage = await this.extractJobsFromPage(page);
           });
 

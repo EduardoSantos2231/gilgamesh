@@ -16,7 +16,7 @@ Este projeto tem como objetivo facilitar a busca por vagas de **estágio em Tecn
 
 | Plataforma | Estágio | Tecnologia | Observações |
 |------------|:-------:|:----------:|-------------|
-| **CIEE** | ✅ | ❌ | Tecnologia não é filtrada (limitação da API) |
+| **CIEE** | ✅ | ✅ | Filtro por "Informática" (case insensitive) |
 | **Solides** | ✅ | ✅ | Filtros completos ✅ |
 | **Catho** | ❌ | ✅ | Estágio não é filtrado (limitação da plataforma) |
 

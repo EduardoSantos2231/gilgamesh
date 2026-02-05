@@ -1,6 +1,8 @@
 import { checkbox, confirm, select } from "@inquirer/prompts";
-import { type Platform, type Modalitie, type RegionKey, } from "@/types/imports.js";
-import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
+import type { Platform } from "../interfaces/platform.type.js";
+import type { Modalitie } from "../types/modalities.types.js";
+import type { RegionKey } from "../types/regions.types.js";
+import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
 import chalk from "chalk";
 
 interface Questions {
@@ -25,10 +27,6 @@ export class ScriptActions implements Questions {
       {
         name: "Catho",
         value: "catho"
-      },
-      {
-        name: "IEL",
-        value: "iel"
       },
       ],
       required: true

@@ -1,5 +1,6 @@
-import { logger } from '@/utils/logger.utils.js';
-import { type InquirerError, ValidationError, ScraperError, InitError } from '@/types/imports.js';
+import { logger } from './logger.utils.js';
+import type { InquirerError } from '../types/error.types.js';
+import { ValidationError, ScraperError, InitError } from '../types/error.types.js';
 
 interface Handlers {
   handleError(error: unknown): void

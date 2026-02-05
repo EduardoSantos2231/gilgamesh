@@ -1,18 +1,22 @@
-import { type Job, type SearchConfig, type IScraper, type Platform, type RegionKey } from "@/types/imports.js";
+import type { Platform } from "../interfaces/platform.type.js";
+import type { Job } from "../types/job.types.js";
 import { BaseScraper } from "./baseScraper.js";
-import type { Page } from "puppeteer";
-import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
-import { logger } from "@/utils/imports.js";
+import { SolidesJobAdapter } from "../adapters/solides-job.adapter.js";
+import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
+import { logger } from "../utils/logger.utils.js";
+import type { RegionKey } from "../types/regions.types.js";
 
-export class SolidesScraper extends BaseScraper implements IScraper {
-  protected readonly scraperName: Platform = "solides";
-  protected readonly BASE_URL = "https://apigw.solides.com.br/jobs/v3/portal-vacancies-new";
+interface SolidesApiResponse {
+  data?: {
+    data?: unknown[];
+    totalPages?: number;
+  };
+}
 
-
-  constructor(config: SearchConfig, page: Page) {
-    super(config, page);
-  }
-
+export class SolidesScraper extends BaseScraper {
+  readonly platform: Platform = "solides";
+  private readonly adapter = new SolidesJobAdapter();
+  private readonly BASE_URL = "https://apigw.solides.com.br/jobs/v3/portal-vacancies-new";
 
   private buildTargetUrl(pageNumber: number): string {
     const region = SUPPORTED_REGIONS[this.config.location as RegionKey];
@@ -30,82 +34,62 @@ export class SolidesScraper extends BaseScraper implements IScraper {
     return `${this.BASE_URL}?${query.toString()}`;
   }
 
-
-  private async fetchApiData(url: string): Promise<any> {
-    if (this.page.url() === 'about:blank') {
-      await this.page.goto('https://vagas.solides.com.br', { waitUntil: 'domcontentloaded' });
-    }
-    return await this.page.evaluate(async (endpoint) => {
-      const response = await fetch(endpoint)
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    }, url);
-  }
-
-
-  private mapToJobs(apiData: any[]): Job[] {
-    return apiData.map((vaga) => {
-
-      const initial = vaga.salary?.initialRange;
-      const final = vaga.salary?.finalRange;
-
-      return {
-        title: vaga.title?.toUpperCase(),
-
-        company: vaga.companyName,
-
-        location: `${vaga.city.name} - ${vaga.state.code}`,
-
-        modality: vaga.homeOffice ? "Remoto" : "Presencial",
-
-        link: vaga.redirectLink,
-
-        postedAt: vaga.createdAt,
-
-        salary: (initial > 0 || final > 0) ? `R$ ${initial} - R$ ${final}` : "A combinar"
-      };
-    });
-  }
-
-
-  async initScraper(): Promise<Job[]> {
-    this.showInitMessage(this.scraperName);
+  async collect(): Promise<Job[]> {
     const allJobs: Job[] = [];
     let currentPage = 1;
     let hasNextPage = true;
+
+    const page = await this.getPage();
+    await page.goto("https://vagas.solides.com.br", { waitUntil: "domcontentloaded" });
 
     try {
       while (hasNextPage && currentPage <= this.MAX_PAGES) {
         const url = this.buildTargetUrl(currentPage);
         logger.info(`[Solides] Coletando página ${currentPage}...`);
 
-        const response = await this.fetchApiData(url);
+        try {
+          const rawResponse = await page.evaluate(async (endpoint: string) => {
+            const res = await fetch(endpoint);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+          }, url) as SolidesApiResponse;
 
+          const rawContent = rawResponse.data?.data || [];
+          const totalPages = rawResponse.data?.totalPages || 1;
 
-        const rawContent = response.data?.data || [];
-        const totalPages = response.data?.totalPages || 1;
+          if (rawContent.length > 0) {
+            const jobs = this.adapter.adaptMany(rawContent as Parameters<typeof this.adapter.adaptMany>[0]);
+            allJobs.push(...jobs);
+            logger.success(`[Solides] Página ${currentPage}: ${rawContent.length} vagas encontradas.`);
+          } else {
+            logger.warn("[Solides] Nenhuma vaga encontrada nesta página.");
+          }
 
-        if (rawContent.length > 0) {
-          allJobs.push(...this.mapToJobs(rawContent));
+          hasNextPage = currentPage < totalPages;
+        } catch (err) {
+          logger.warn(`[Solides] Erro ao coletar página ${currentPage}: ${err}`);
+          hasNextPage = false;
         }
 
-
-        hasNextPage = currentPage < totalPages;
         currentPage++;
 
         if (hasNextPage && currentPage <= this.MAX_PAGES) {
-          await new Promise(r => setTimeout(r, 1500));
+          await new Promise((r) => setTimeout(r, 1500));
         }
       }
 
-      logger.success(`[Solides] Finalizado com ${allJobs.length} vagas.`);
-      return allJobs;
+      if (allJobs.length === 0) {
+        logger.warn("[Solides] Nenhuma vaga encontrada.");
+      } else {
+        logger.success(`[Solides] Total: ${allJobs.length} vagas coletadas.`);
+      }
 
+      return allJobs;
     } catch (error) {
-      logger.error(`[Solides] Erro no fluxo: \n${error}`);
+      logger.error(`[Solides] Erro crítico: ${error}`);
       return allJobs;
     } finally {
-      await this.closePage();
+      await page.close();
     }
   }
 }

@@ -1,8 +1,8 @@
 // @/utils/export.utils.ts
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import type { Job } from "@/types/imports.js";
-import { logger } from "./imports.js";
+import type { Job } from "../types/job.types.js";
+import { logger } from "./logger.utils.js";
 
 export class CsvExporter {
   static export(jobs: Job[], filename: string) {

@@ -1,28 +1,21 @@
-import type { Platform, SearchConfig, Job, RegionKey, IScraper } from "@/types/imports.js";
-import { ScraperError, } from "@/types/imports.js";
-import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
+import type { Platform } from "../interfaces/platform.type.js";
+import type { Job } from "../types/job.types.js";
+import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
 import { BaseScraper } from "./baseScraper.js";
-import type { Page } from "puppeteer";
-import { logger } from "@/utils/imports.js";
+import { CathoJobAdapter } from "../adapters/catho-job.adapter.js";
+import type { RegionKey } from "../types/regions.types.js";
+import { logger } from "../utils/logger.utils.js";
 
-export class CathoScraper extends BaseScraper implements IScraper {
-  protected readonly scraperName: Platform = "catho";
-  protected readonly BASE_URL = "https://www.catho.com.br/vagas";
+export class CathoScraper extends BaseScraper {
+  readonly platform: Platform = "catho";
+  private readonly adapter = new CathoJobAdapter();
   private readonly TI_AREA_IDENTIFIERS = ["51", "52"];
-
-  constructor(config: SearchConfig, page: Page) {
-    super(config, page);
-  }
-
 
   private buildRegionalPath(): string {
     const regionKey = this.config.location as RegionKey;
     const data = SUPPORTED_REGIONS[regionKey];
-
-
     return `/${data.state}/${data.city}/`;
   }
-
 
   private buildSearchFilters(pageNumber: number): string {
     const searchParams = new URLSearchParams();
@@ -36,72 +29,74 @@ export class CathoScraper extends BaseScraper implements IScraper {
     return `?${searchParams.toString()}`;
   }
 
-
   private generateTargetUrl(pageNumber: number): string {
     const regionalPath = this.buildRegionalPath();
     const filterQueryString = this.buildSearchFilters(pageNumber);
-    return `${this.BASE_URL}${regionalPath}${filterQueryString}`;
+    return `${"https://www.catho.com.br/vagas"}${regionalPath}${filterQueryString}`;
   }
 
-
-  private async extractJobsFromPage(): Promise<Job[]> {
-    return await this.page.$$eval('article', (elements) => {
-      return elements.map(el => {
-        const titleElement = el.querySelector('h2 a');
-        const companyElement = el.querySelector('p');
-        const locationElement = el.querySelector('a[href*="/vagas/"][title*=" - "]');
-
-        const rawLocation = locationElement?.textContent?.trim() || 'Localização não informada';
-        const cleanLocation = rawLocation.replace(/\s\(\d+\)$/, '');
+  private async extractJobsFromPage(page: import("puppeteer").Page): Promise<Job[]> {
+    const elements = await page.$$eval("article", (els) =>
+      els.map((el) => {
+        const titleEl = el.querySelector("h2 a");
+        const companyEl = el.querySelector("p");
+        const locationEl = el.querySelector("a[href*=\"/vagas/\"][title*=\" - \"]");
 
         return {
-          title: titleElement?.innerText?.trim() || 'Título não disponível',
-          company: companyElement?.innerText?.trim() || 'Empresa Confidencial',
-          location: cleanLocation,
-          modality: 'unknown',
-          link: titleElement?.href || '',
+          title: titleEl?.innerText?.trim() || "Título não disponível",
+          company: companyEl?.innerText?.trim() || "Empresa Confidencial",
+          location: locationEl?.textContent?.trim() || "Localização não informada",
+          link: titleEl?.href || "",
         };
-      });
-    }) as Job[];
+      })
+    );
+
+    return this.adapter.adaptMany(elements);
   }
 
-
-  async initScraper(): Promise<Job[]> {
-    this.showInitMessage(this.scraperName);
-
+  async collect(): Promise<Job[]> {
     const allJobs: Job[] = [];
 
     try {
       for (let currentPage = 1; currentPage <= this.MAX_PAGES; currentPage++) {
         const targetUrl = this.generateTargetUrl(currentPage);
-        logger.info(`[CATHO] Varrendo página ${currentPage}: ${targetUrl}`);
+        logger.info(`[CATHO] Varrendo página ${currentPage}...`);
 
         await this.acessUrl(targetUrl);
 
+        let jobsFromPage: Job[] = [];
+
         try {
-          await this.page.waitForSelector('article', { timeout: 5000 });
+          await this.withPage(async (page) => {
+            await page.waitForSelector("article", { timeout: 5000 });
+            jobsFromPage = await this.extractJobsFromPage(page);
+          });
 
-          const jobsFromPage = await this.extractJobsFromPage();
-          allJobs.push(...jobsFromPage);
-
-          logger.success(`[CATHO] Página ${currentPage}: ${jobsFromPage.length} vagas encontradas.`);
-
-          // Delay humano entre as páginas
-          if (currentPage < this.MAX_PAGES) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+          if (jobsFromPage.length === 0) {
+            logger.warn("[CATHO] Nenhuma vaga encontrada nesta página.");
+          } else {
+            allJobs.push(...jobsFromPage);
+            logger.success(`[CATHO] Página ${currentPage}: ${jobsFromPage.length} vagas encontradas.`);
           }
-        } catch (err) {
-          throw new ScraperError("[CATHO] : Nenhuma vaga encontrada!")
+        } catch {
+          logger.warn("[CATHO] Timeout ou estrutura da página mudou.");
         }
+
+        if (currentPage < this.MAX_PAGES) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (allJobs.length === 0) {
+        logger.warn("[CATHO] Nenhuma vaga encontrada.");
+      } else {
+        logger.success(`[CATHO] Total: ${allJobs.length} vagas coletadas.`);
       }
 
       return allJobs;
     } catch (error) {
-      logger.error(`[CATHO] Erro crítico na operação: ${error}`);
+      logger.error(`[CATHO] Erro crítico: ${error}`);
       return allJobs;
-    } finally {
-      await this.closePage();
-      logger.info(`[CATHO] scraper finalizado.`);
     }
   }
 }

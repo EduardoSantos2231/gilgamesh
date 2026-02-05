@@ -1,19 +1,22 @@
-import { type Job, type SearchConfig, type IScraper, type Platform, type RegionKey, ScraperError } from "@/types/imports.js";
+import type { Platform } from "../interfaces/platform.type.js";
+import type { Job } from "../types/job.types.js";
+import type { CieeApiVaga } from "../adapters/ciee-job.adapter.js";
+import { ScraperError } from "../types/error.types.js";
 import { BaseScraper } from "./baseScraper.js";
-import type { Page } from "puppeteer";
-import { SUPPORTED_REGIONS } from "@/constants/supportedRegions.js";
-import { logger } from "@/utils/imports.js";
+import { CieeJobAdapter } from "../adapters/ciee-job.adapter.js";
+import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
+import { logger } from "../utils/logger.utils.js";
+import type { RegionKey } from "../types/regions.types.js";
 
+interface CieeApiResponse {
+  last: boolean;
+  content?: CieeApiVaga[];
+}
 
-export class CieeScraper extends BaseScraper implements IScraper {
-  protected readonly scraperName: Platform = "ciee";
-  protected readonly BASE_URL = "https://api.ciee.org.br/vagas/vitrine-vaga/publicadas";
-
-
-  constructor(config: SearchConfig, page: Page) {
-    super(config, page);
-  }
-
+export class CieeScraper extends BaseScraper {
+  readonly platform: Platform = "ciee";
+  private readonly adapter = new CieeJobAdapter();
+  private readonly BASE_URL = "https://api.ciee.org.br/vagas/vitrine-vaga/publicadas";
 
   private buildTargetUrl(pageNumber: number): string {
     const regionKey = this.config.location as RegionKey;
@@ -30,35 +33,17 @@ export class CieeScraper extends BaseScraper implements IScraper {
     return `${this.BASE_URL}?${query.toString()}`;
   }
 
-
-  private async fetchApiData(url: string): Promise<any> {
-    return await this.page.evaluate(async (endpoint) => {
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new ScraperError(`Falha HTTP: ${response.status}`);
-      return await response.json();
-    }, url);
+  private async fetchApiData(url: string): Promise<CieeApiResponse> {
+    return await this.withPage(async (page) => {
+      return await page.evaluate(async (endpoint: string) => {
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new ScraperError(`Falha HTTP: ${response.status}`);
+        return await response.json();
+      }, url) as CieeApiResponse;
+    });
   }
 
-  private mapToJobs(apiContent: any[]): Job[] {
-    return apiContent.map((vaga) => ({
-
-      title: vaga.areaProfissional || vaga.tipoVaga,
-
-      company: vaga.nomeEmpresa,
-
-      location: `${vaga.local.cidade} - ${vaga.local.uf}`,
-
-      modality: vaga.tipoVaga,
-
-      link: `https://portal.ciee.org.br/vaga/${vaga.codigoVaga}`,
-
-      salary: vaga.bolsaAuxilio ? `R$ ${vaga.bolsaAuxilio}` : "N/A",
-    }));
-  }
-
-
-  async initScraper(): Promise<Job[]> {
-    this.showInitMessage(this.scraperName);
+  async collect(): Promise<Job[]> {
     const allJobs: Job[] = [];
     let currentPage = 0;
     let isLastPage = false;
@@ -68,27 +53,36 @@ export class CieeScraper extends BaseScraper implements IScraper {
         const url = this.buildTargetUrl(currentPage);
         logger.info(`[CIEE] Coletando página ${currentPage}...`);
 
-        const data = await this.fetchApiData(url);
+        try {
+          const data = await this.fetchApiData(url);
+          isLastPage = data.last;
+          const rawContent = data.content || [];
 
-        isLastPage = data.last;
-        const rawContent = data.content || [];
-
-        if (rawContent.length > 0) {
-          allJobs.push(...this.mapToJobs(rawContent));
+          if (rawContent.length > 0) {
+            const jobs = this.adapter.adaptMany(rawContent);
+            allJobs.push(...jobs);
+            logger.success(`[CIEE] Página ${currentPage}: ${rawContent.length} vagas encontradas.`);
+          } else {
+            logger.warn("[CIEE] Nenhuma vaga encontrada nesta página.");
+          }
+        } catch (err) {
+          logger.warn(`[CIEE] Erro ao coletar página ${currentPage}: ${err}`);
         }
 
         currentPage++;
-        if (!isLastPage) await new Promise(r => setTimeout(r, 1000));
+        if (!isLastPage) await new Promise((r) => setTimeout(r, 1000));
       }
 
-      logger.success(`[CIEE] Finalizado com ${allJobs.length} vagas.`);
-      return allJobs;
+      if (allJobs.length === 0) {
+        logger.warn("[CIEE] Nenhuma vaga encontrada.");
+      } else {
+        logger.success(`[CIEE] Total: ${allJobs.length} vagas coletadas.`);
+      }
 
-    } catch (error) {
-      logger.error(`[CIEE] Erro no fluxo: ${error}`);
       return allJobs;
-    } finally {
-      await this.closePage();
+    } catch (error) {
+      logger.error(`[CIEE] Erro crítico: ${error}`);
+      return allJobs;
     }
   }
 }

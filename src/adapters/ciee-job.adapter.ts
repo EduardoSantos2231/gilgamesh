@@ -11,7 +11,15 @@ export interface CieeApiVaga {
 }
 
 export class CieeJobAdapter implements IJobAdapter<CieeApiVaga> {
-  adapt(data: CieeApiVaga): Job {
+  private readonly AREA_TECH_FILTER = "informática";
+
+  adapt(data: CieeApiVaga): Job | null {
+    const areaProfissional = data.areaProfissional?.toLowerCase() || "";
+
+    if (!areaProfissional.includes(this.AREA_TECH_FILTER)) {
+      return null;
+    }
+
     return {
       title: data.areaProfissional || data.tipoVaga,
       company: data.nomeEmpresa,
@@ -23,6 +31,7 @@ export class CieeJobAdapter implements IJobAdapter<CieeApiVaga> {
   }
 
   adaptMany(data: CieeApiVaga[]): Job[] {
-    return data.map((item) => this.adapt(item));
+    const validData = data.filter(item => this.adapt(item) !== null);
+    return validData.map(item => this.adapt(item)!);
   }
 }

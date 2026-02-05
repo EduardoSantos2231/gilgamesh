@@ -6,6 +6,7 @@ import { SolidesJobAdapter } from "../adapters/solides-job.adapter.js";
 import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
 import { logger } from "../utils/logger.utils.js";
 import type { RegionKey } from "../types/regions.types.js";
+import { MODALITY_TO_SOLIDES } from "../types/modalities.types.js";
 
 interface SolidesApiResponse {
   success: boolean;
@@ -22,11 +23,11 @@ export class SolidesScraper extends BaseScraper {
   readonly platform: Platform = "solides";
   private readonly adapter = new SolidesJobAdapter();
 
-  private buildTargetUrl(pageNumber: number): string {
+  private buildTargetUrl(pageNumber: number, contractType: string): string {
     const region = SUPPORTED_REGIONS[this.config.location as RegionKey];
 
     const params = new URLSearchParams({
-      contractsType: "estagio",
+      contractsType: contractType,
       occupationAreas: "tecnologia",
       page: pageNumber.toString(),
       title: "",
@@ -39,37 +40,19 @@ export class SolidesScraper extends BaseScraper {
 
   async collect(page: Page): Promise<Job[]> {
     const allJobs: Job[] = [];
-    let currentPage = 1;
-    let hasNextPage = true;
 
     await page.goto("https://vagas.solides.com.br", { waitUntil: "domcontentloaded" });
 
     try {
-      while (hasNextPage) {
-        const url = this.buildTargetUrl(currentPage);
-        logger.info(`[Solides] Coletando página ${currentPage}...`);
+      for (const modality of this.config.modalities) {
+        const contractType = MODALITY_TO_SOLIDES[modality];
+        logger.info(`[Solides] Coletando: ${modality}...`);
 
-        const response = await page.evaluate(async (endpoint: string) => {
-          const res = await fetch(endpoint);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return await res.json();
-        }, url) as SolidesApiResponse;
+        const modalityJobs = await this.collectByModality(page, contractType);
+        allJobs.push(...modalityJobs);
 
-        const rawContent = response.data?.data || [];
-        const totalPages = response.data?.totalPages || 1;
-
-        if (rawContent.length > 0) {
-          const jobs = this.adapter.adaptMany(rawContent as Parameters<typeof this.adapter.adaptMany>[0]);
-          allJobs.push(...jobs);
-          logger.success(`[Solides] Página ${currentPage}: ${rawContent.length} vagas encontradas.`);
-        } else {
-          logger.warn("[Solides] Nenhuma vaga encontrada nesta página.");
-        }
-
-        hasNextPage = currentPage < totalPages;
-        currentPage++;
-
-        if (hasNextPage) {
+        const isLastModality = this.config.modalities.indexOf(modality) === this.config.modalities.length - 1;
+        if (!isLastModality) {
           await new Promise((r) => setTimeout(r, 1500));
         }
       }
@@ -85,5 +68,40 @@ export class SolidesScraper extends BaseScraper {
       logger.error(`[Solides] Erro crítico: ${error}`);
       return allJobs;
     }
+  }
+
+  private async collectByModality(page: Page, contractType: string): Promise<Job[]> {
+    const allJobs: Job[] = [];
+    let currentPage = 1;
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      const url = this.buildTargetUrl(currentPage, contractType);
+      logger.info(`[Solides] Página ${currentPage} (${contractType})...`);
+
+      const response = await page.evaluate(async (endpoint: string) => {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      }, url) as SolidesApiResponse;
+
+      const rawContent = response.data?.data || [];
+      const totalPages = response.data?.totalPages || 1;
+
+      if (rawContent.length > 0) {
+        const jobs = this.adapter.adaptMany(rawContent as Parameters<typeof this.adapter.adaptMany>[0]);
+        allJobs.push(...jobs);
+        logger.success(`[Solides] ${contractType}: +${rawContent.length} vagas`);
+      }
+
+      hasNextPage = currentPage < totalPages;
+      currentPage++;
+
+      if (hasNextPage) {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+
+    return allJobs;
   }
 }

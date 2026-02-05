@@ -1,5 +1,6 @@
 import type { Platform } from "../interfaces/platform.type.js";
 import type { Job } from "../types/job.types.js";
+import type { Page } from "puppeteer";
 import { BaseScraper } from "./baseScraper.js";
 import { SolidesJobAdapter } from "../adapters/solides-job.adapter.js";
 import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
@@ -34,12 +35,11 @@ export class SolidesScraper extends BaseScraper {
     return `${this.BASE_URL}?${query.toString()}`;
   }
 
-  async collect(): Promise<Job[]> {
+  async collect(page: Page): Promise<Job[]> {
     const allJobs: Job[] = [];
     let currentPage = 1;
     let hasNextPage = true;
 
-    const page = await this.getPage();
     await page.goto("https://vagas.solides.com.br", { waitUntil: "domcontentloaded" });
 
     try {
@@ -88,8 +88,6 @@ export class SolidesScraper extends BaseScraper {
     } catch (error) {
       logger.error(`[Solides] Erro crítico: ${error}`);
       return allJobs;
-    } finally {
-      await page.close();
     }
   }
 }

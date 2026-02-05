@@ -1,6 +1,7 @@
 import puppeteer, { type Browser, type BrowserContext, type Page } from "puppeteer";
 import type { IBrowserContext } from "../../interfaces/browser-context.interface.js";
 import { InitError } from "../../types/error.types.js";
+import { logger } from "../../utils/logger.utils.js";
 
 interface StealthConfig {
   userAgent?: string;
@@ -17,16 +18,28 @@ export class BrowserContextImpl implements IBrowserContext {
   async init(): Promise<void> {
     if (this.browser) return;
 
-    this.browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-      ],
-    });
+    logger.info("[Browser] Iniciando browser...");
 
-    this.context = await this.browser.createBrowserContext();
+    try {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        timeout: 60000,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-blink-features=AutomationControlled",
+        ],
+      });
+
+      const executablePath = (this.browser as Browser & { executablePath?: () => string }).executablePath?.() || "não disponível";
+      logger.info(`[Browser] Chrome executável: ${executablePath}`);
+
+      this.context = await this.browser.createBrowserContext();
+      logger.info("[Browser] Browser inicializado com sucesso");
+    } catch (error) {
+      logger.error(`[Browser] Erro ao iniciar: ${error}`);
+      throw new InitError(`Falha ao iniciar browser: ${error}`);
+    }
   }
 
   async getPage(): Promise<Page> {
@@ -34,9 +47,12 @@ export class BrowserContextImpl implements IBrowserContext {
       throw new InitError("Browser não inicializado. Chame init() primeiro.");
     }
 
+    logger.info("[Browser] Criando nova página...");
     const page = await this.context.newPage();
+    logger.info("[Browser] Página criada");
 
     await this.applyStealth(page);
+    logger.info("[Browser] Stealth aplicado");
 
     return page;
   }
@@ -91,6 +107,7 @@ export class BrowserContextImpl implements IBrowserContext {
       await this.browser.close();
       this.browser = null;
       this.context = null;
+      logger.info("[Browser] Browser fechado");
     }
   }
 }

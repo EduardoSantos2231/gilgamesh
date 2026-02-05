@@ -7,6 +7,7 @@ import { CieeJobAdapter } from "../adapters/ciee-job.adapter.js";
 import { SUPPORTED_REGIONS } from "../constants/supportedRegions.js";
 import { logger } from "../utils/logger.utils.js";
 import type { RegionKey } from "../types/regions.types.js";
+import type { Page } from "puppeteer";
 
 interface CieeApiResponse {
   last: boolean;
@@ -33,17 +34,15 @@ export class CieeScraper extends BaseScraper {
     return `${this.BASE_URL}?${query.toString()}`;
   }
 
-  private async fetchApiData(url: string): Promise<CieeApiResponse> {
-    return await this.withPage(async (page) => {
-      return await page.evaluate(async (endpoint: string) => {
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new ScraperError(`Falha HTTP: ${response.status}`);
-        return await response.json();
-      }, url) as CieeApiResponse;
-    });
+  private async fetchApiData(page: Page, url: string): Promise<CieeApiResponse> {
+    return await page.evaluate(async (endpoint: string) => {
+      const response = await fetch(endpoint);
+      if (!response.ok) throw new ScraperError(`Falha HTTP: ${response.status}`);
+      return await response.json();
+    }, url) as CieeApiResponse;
   }
 
-  async collect(): Promise<Job[]> {
+  async collect(page: Page): Promise<Job[]> {
     const allJobs: Job[] = [];
     let currentPage = 0;
     let isLastPage = false;
@@ -54,7 +53,7 @@ export class CieeScraper extends BaseScraper {
         logger.info(`[CIEE] Coletando página ${currentPage}...`);
 
         try {
-          const data = await this.fetchApiData(url);
+          const data = await this.fetchApiData(page, url);
           isLastPage = data.last;
           const rawContent = data.content || [];
 

@@ -19,7 +19,7 @@ export class ScraperHandler {
         logger.info(`[Handler] Iniciando varredura na plataforma: ${platform}`);
 
         const scraper = ScraperFactory.create(platform, config, browserContext);
-        const jobs = await scraper.collect();
+        const jobs = await scraper.execute();
 
         CsvExporter.export(jobs, `vagas_${platform}_${getCurrentDate()}.csv`);
       }

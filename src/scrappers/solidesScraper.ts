@@ -8,31 +8,33 @@ import { logger } from "../utils/logger.utils.js";
 import type { RegionKey } from "../types/regions.types.js";
 
 interface SolidesApiResponse {
-  data?: {
-    data?: unknown[];
-    totalPages?: number;
+  success: boolean;
+  errors: string[];
+  data: {
+    totalPages: number;
+    currentPage: number;
+    count: number;
+    data: unknown[];
   };
 }
 
 export class SolidesScraper extends BaseScraper {
   readonly platform: Platform = "solides";
   private readonly adapter = new SolidesJobAdapter();
-  private readonly BASE_URL = "https://apigw.solides.com.br/jobs/v3/portal-vacancies-new";
 
   private buildTargetUrl(pageNumber: number): string {
     const region = SUPPORTED_REGIONS[this.config.location as RegionKey];
 
-    const locationParam = `${region.apiName} - ${region.state.toUpperCase()}`;
-
-    const query = new URLSearchParams({
+    const params = new URLSearchParams({
+      contractsType: "estagio",
       occupationAreas: "tecnologia",
       page: pageNumber.toString(),
       title: "",
-      locations: locationParam,
-      take: "30",
+      locations: region.solidesLocations,
+      take: "14",
     });
 
-    return `${this.BASE_URL}?${query.toString()}`;
+    return `https://apigw.solides.com.br/jobs/v3/portal-vacancies-new?${params.toString()}`;
   }
 
   async collect(page: Page): Promise<Job[]> {
@@ -43,37 +45,31 @@ export class SolidesScraper extends BaseScraper {
     await page.goto("https://vagas.solides.com.br", { waitUntil: "domcontentloaded" });
 
     try {
-      while (hasNextPage && currentPage <= this.MAX_PAGES) {
+      while (hasNextPage) {
         const url = this.buildTargetUrl(currentPage);
         logger.info(`[Solides] Coletando página ${currentPage}...`);
 
-        try {
-          const rawResponse = await page.evaluate(async (endpoint: string) => {
-            const res = await fetch(endpoint);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.json();
-          }, url) as SolidesApiResponse;
+        const response = await page.evaluate(async (endpoint: string) => {
+          const res = await fetch(endpoint);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return await res.json();
+        }, url) as SolidesApiResponse;
 
-          const rawContent = rawResponse.data?.data || [];
-          const totalPages = rawResponse.data?.totalPages || 1;
+        const rawContent = response.data?.data || [];
+        const totalPages = response.data?.totalPages || 1;
 
-          if (rawContent.length > 0) {
-            const jobs = this.adapter.adaptMany(rawContent as Parameters<typeof this.adapter.adaptMany>[0]);
-            allJobs.push(...jobs);
-            logger.success(`[Solides] Página ${currentPage}: ${rawContent.length} vagas encontradas.`);
-          } else {
-            logger.warn("[Solides] Nenhuma vaga encontrada nesta página.");
-          }
-
-          hasNextPage = currentPage < totalPages;
-        } catch (err) {
-          logger.warn(`[Solides] Erro ao coletar página ${currentPage}: ${err}`);
-          hasNextPage = false;
+        if (rawContent.length > 0) {
+          const jobs = this.adapter.adaptMany(rawContent as Parameters<typeof this.adapter.adaptMany>[0]);
+          allJobs.push(...jobs);
+          logger.success(`[Solides] Página ${currentPage}: ${rawContent.length} vagas encontradas.`);
+        } else {
+          logger.warn("[Solides] Nenhuma vaga encontrada nesta página.");
         }
 
+        hasNextPage = currentPage < totalPages;
         currentPage++;
 
-        if (hasNextPage && currentPage <= this.MAX_PAGES) {
+        if (hasNextPage) {
           await new Promise((r) => setTimeout(r, 1500));
         }
       }

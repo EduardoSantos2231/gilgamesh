@@ -6,8 +6,6 @@ interface Handlers {
   handleError(error: unknown): void
 }
 
-
-
 export class ErrorHandler implements Handlers {
 
   private isExitError(error: unknown): error is InquirerError {
@@ -31,6 +29,7 @@ export class ErrorHandler implements Handlers {
   }
 
   private isInitError(error: unknown): error is InitError {
+
     return error instanceof Error &&
       (error.name === 'InitError')
   }
@@ -38,7 +37,7 @@ export class ErrorHandler implements Handlers {
   handleError(error: unknown): void {
     if (this.isInitError(error)) {
       console.log("\n")
-      logger.error("Algo deu errado ao iniciar a instância do browser...")
+      logger.error(`Erro ao iniciar browser: ${error.message}`);
       process.exit(1)
     }
 
@@ -50,7 +49,6 @@ export class ErrorHandler implements Handlers {
 
     if (this.isScraperError(error)) {
       logger.error(`[Scraper] Falha ao coletar dados: \n${error.message}`);
-      // Aqui você poderia decidir não fechar o processo, apenas avisar
       return;
     }
 

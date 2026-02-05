@@ -37,49 +37,71 @@ export class CathoScraper extends BaseScraper {
   }
 
   private async extractJobsFromPage(page: Page): Promise<Job[]> {
-    const elements = await page.$$eval("article", (els) =>
+    const containerSelector = "#search-result ul > li";
+
+    const containerExists = await page.$(containerSelector);
+    if (!containerExists) {
+      return [];
+    }
+
+    const elements = await page.$$eval(containerSelector, (els) =>
       els.map((el) => {
         const titleEl = el.querySelector("h2 a");
-        const companyEl = el.querySelector("p");
-        const locationEl = el.querySelector("a[href*=\"/vagas/\"][title*=\" - \"]");
+        if (!titleEl) return null;
+        const title = titleEl.innerText?.trim() || "Título não disponível";
+        const link = titleEl.href || "";
+
+        const companyEl = el.querySelector("header p");
+        const company = companyEl?.textContent?.trim() || "Empresa Confidencial";
+
+        const locationEl = el.querySelector('a[title*=" - "]');
+        let location = locationEl?.getAttribute("title") || locationEl?.textContent || "Localização não informada";
+
+        location = location.replace(/\s\(\d+\)$/, "").trim();
+
+        let modality = "Presencial";
+        const lowerTitle = title.toLowerCase();
+        if (lowerTitle.includes("trabalhe de casa") || lowerTitle.includes("work from home") || lowerTitle.includes("remoto")) {
+          modality = "Remoto";
+        } else if (lowerTitle.includes("híbrido")) {
+          modality = "Híbrido";
+        }
+
+        const timeEl = el.querySelector("time");
+        const postedAt = timeEl?.textContent?.trim();
 
         return {
-          title: titleEl?.innerText?.trim() || "Título não disponível",
-          company: companyEl?.innerText?.trim() || "Empresa Confidencial",
-          location: locationEl?.textContent?.trim() || "Localização não informada",
-          link: titleEl?.href || "",
+          title,
+          company,
+          location,
+          link,
+          modality,
+          postedAt
         };
       })
     );
 
-    return this.adapter.adaptMany(elements);
+    const validJobs = elements.filter((job) => job !== null);
+    return this.adapter.adaptMany(validJobs as any);
   }
 
-  async collect(): Promise<Job[]> {
+  async collect(page: Page): Promise<Job[]> {
     const allJobs: Job[] = [];
 
     try {
       for (let currentPage = 1; currentPage <= this.MAX_PAGES; currentPage++) {
         const targetUrl = this.generateTargetUrl(currentPage);
-        logger.info(`[CATHO] Varrendo página ${currentPage}...`);
-        await this.acessUrl(targetUrl);
+        logger.info(`[CATHO] Coletando página ${currentPage}...`);
 
-        let jobsFromPage: Job[] = [];
+        await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
 
-        try {
-          await this.withPage(async (page) => {
-            await page.waitForSelector("article", { timeout: 9000 });
-            jobsFromPage = await this.extractJobsFromPage(page);
-          });
+        const jobsFromPage = await this.extractJobsFromPage(page);
 
-          if (jobsFromPage.length === 0) {
-            logger.warn("[CATHO] Nenhuma vaga encontrada nesta página.");
-          } else {
-            allJobs.push(...jobsFromPage);
-            logger.success(`[CATHO] Página ${currentPage}: ${jobsFromPage.length} vagas encontradas.`);
-          }
-        } catch {
-          logger.warn("[CATHO] Timeout ou estrutura da página mudou.");
+        if (jobsFromPage.length === 0) {
+          logger.warn("[CATHO] Nenhuma vaga encontrada nesta página.");
+        } else {
+          allJobs.push(...jobsFromPage);
+          logger.success(`[CATHO] Página ${currentPage}: ${jobsFromPage.length} vagas encontradas.`);
         }
 
         if (currentPage < this.MAX_PAGES) {

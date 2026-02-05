@@ -14,7 +14,7 @@ export abstract class BaseScraper implements IScraper {
   ) {}
 
   abstract readonly platform: Platform;
-  abstract collect(): Promise<Job[]>;
+  abstract collect(page: Page): Promise<Job[]>;
 
   protected async getPage(): Promise<Page> {
     return await this.browserContext.getPage();
@@ -25,22 +25,14 @@ export abstract class BaseScraper implements IScraper {
     logger.success(`Modalidade: ${this.config.modalities.join(", ")}`);
   }
 
-  protected async acessUrl(url: string): Promise<void> {
-    const page = await this.getPage();
-    await page.goto(url, { waitUntil: "domcontentloaded" });
-  }
-
-  protected async withPage<T>(fn: (page: Page) => Promise<T>): Promise<T> {
-    const page = await this.getPage();
-    try {
-      return await fn(page);
-    } finally {
-      await page.close();
-    }
-  }
-
   async execute(): Promise<Job[]> {
     this.showInitMessage();
-    return await this.collect();
+    const page = await this.getPage();
+
+    try {
+      return await this.collect(page);
+    } finally {
+      await page.close();  // fecha apenas a página, NÃO o browser
+    }
   }
 }

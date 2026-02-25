@@ -20,7 +20,8 @@ Este projeto tem como objetivo facilitar a busca por vagas de **estágio em Tecn
 | **Solides** | ✅ | ✅ | Filtros completos ✅ |
 | **Catho** | ❌ | ✅ | Estágio não é filtrado (limitação da plataforma) |
 
-> **Nota:** Aplicamos os filtros disponíveis em cada plataforma. Onde há limitação, retornamos todas as vagas disponíveis e você pode refinar a busca diretamente na plataforma.
+> **Nota:** Utilizei os filtros disponíveis em cada plataforma. Onde há limitação, são retornadas todas as vagas disponíveis e você pode refinar a busca diretamente na plataforma. Mais plataformas não foram adicionadas devido às limitações e políticas restritivas das próprias plataformas.
+
 
 ---
 
